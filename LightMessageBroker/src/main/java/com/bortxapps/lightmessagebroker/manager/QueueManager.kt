@@ -17,7 +17,9 @@ import com.bortxapps.lightmessagebroker.messages.MessageBundle
  */
 internal object MessageQueueManager {
 
-    private val mListOfHandlers: MutableMap<Long, MessageHandler> = mutableMapOf()
+    private val mListOfHandlersById: MutableMap<Long, MessageHandler> = mutableMapOf()
+
+    private val mListOfHandlersBtCategory: MutableMap<Long, MutableList<MessageHandler>> = mutableMapOf()
 
     /**
      * Add a new message handler to the mailing system
@@ -36,12 +38,25 @@ internal object MessageQueueManager {
             onMessageReceived = onMessageReceived
         )
 
-        if (mListOfHandlers.containsKey(messageHandler.clientId)) {
+
+        if (mListOfHandlersById.containsKey(messageHandler.clientId)) {
             throw LightMessageBrokerException(
                 "There is already a message client with with id ${messageHandler.clientId}"
             )
         }
-        mListOfHandlers[messageHandler.clientId] = messageHandler
+        mListOfHandlersById[messageHandler.clientId] = messageHandler
+
+        supportedCategories.forEach {
+            if (!mListOfHandlersBtCategory.containsKey(it)) {
+                mListOfHandlersBtCategory[it] = mutableListOf()
+            }
+
+            if (mListOfHandlersBtCategory[it]?.none { handler -> handler.clientId == messageHandler.clientId } == true) {
+                mListOfHandlersBtCategory[it]?.add(messageHandler)
+            }
+        }
+
+
         messageHandler.startConsuming()
     }
 
@@ -52,11 +67,24 @@ internal object MessageQueueManager {
      */
     fun removeHandler(handlerId: Long) {
         try {
-            if (mListOfHandlers.containsKey(handlerId)) {
+            if (mListOfHandlersById.containsKey(handlerId)) {
                 Log.d("MessageQueueManager", "Removing queue handler $handlerId")
-                mListOfHandlers[handlerId]?.dispose()
-                mListOfHandlers.remove(handlerId)
+                mListOfHandlersById[handlerId]?.dispose()
+                mListOfHandlersById.remove(handlerId)
             }
+
+            mListOfHandlersBtCategory.values
+                .forEach {
+                    it.removeAll { handler -> handler.clientId == handlerId }
+                }
+
+            mListOfHandlersBtCategory
+                .filter { it.value.isEmpty() }
+                .map { it.key }
+                .forEach {
+                    mListOfHandlersBtCategory.remove(it)
+                }
+
         } catch (ex: Exception) {
             throw LightMessageBrokerException("Unable to remove handler with id $handlerId", ex)
         }
@@ -64,7 +92,8 @@ internal object MessageQueueManager {
 
     fun clearHandlers() {
         //use to list to make a copy
-        mListOfHandlers.toList().forEach { removeHandler(it.first) }
+        mListOfHandlersById.toList().forEach { removeHandler(it.first) }
+        mListOfHandlersBtCategory.clear()
     }
 
     private fun buildMessage(messageKey: Long, category: Long, payload: Any): MessageBundle = MessageBundle(messageKey, category, payload)
@@ -100,7 +129,7 @@ internal object MessageQueueManager {
      */
     private suspend fun sendMessagesWithoutCategory(clientId: Long, message: MessageBundle) {
         try {
-            mListOfHandlers
+            mListOfHandlersById
                 .filter { it.key != clientId }
                 .ifEmpty {
                     throw LightMessageBrokerException("Client Id: $clientId, There isn't any more clients available in the system")
@@ -125,16 +154,15 @@ internal object MessageQueueManager {
      */
     private suspend fun sendMessagesWithCategory(clientId: Long, message: MessageBundle, categoryId: Long) {
         try {
-            mListOfHandlers
-                .filter { it.key != clientId }
-                .filter {
-                    it.value.supportedCategories.isEmpty() || it.value.supportedCategories.contains(categoryId)
+            mListOfHandlersBtCategory[message.messageCategory]
+                ?.filter {
+                    it.clientId != clientId
                 }
-                .ifEmpty {
+                ?.ifEmpty {
                     throw LightMessageBrokerException("Client Id: $clientId, There isn't any client expecting messages for category $categoryId")
                 }
-                .forEach {
-                    it.value.postMessage(message)
+                ?.forEach {
+                    it.postMessage(message)
                 }
         } catch (ex: LightMessageBrokerException) {
             throw ex
