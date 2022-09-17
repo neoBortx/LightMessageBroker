@@ -2,6 +2,7 @@
     <string name="app_name">LightMessageBrokerExample</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="number_messages">Number of messages</string>
+    <string name="number_consumers">Number of consumers</string>
     <string name="start">Start</string>
     <string name="all_messages_label">All messages processed in: </string>
     <string name="milliseconds">milliseconds</string>

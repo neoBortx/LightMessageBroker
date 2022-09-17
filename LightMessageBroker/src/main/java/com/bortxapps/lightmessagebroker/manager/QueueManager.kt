@@ -1,7 +1,6 @@
 package com.bortxapps.lightmessagebroker.manager
 
 import android.util.Log
-import androidx.lifecycle.Lifecycle
 import com.bortxapps.lightmessagebroker.constants.Constants.NO_CATEGORY
 import com.bortxapps.lightmessagebroker.exceptions.LightMessageBrokerException
 import com.bortxapps.lightmessagebroker.messagehandler.MessageHandler
@@ -28,16 +27,13 @@ internal object MessageQueueManager {
     fun attachHandler(
         clientId: Long,
         supportedCategories: List<Long> = listOf(),
-        onMessageReceived: (Long, Any) -> Unit,
-        lifecycle: Lifecycle
+        onMessageReceived: (msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
     ) {
 
         val messageHandler = MessageHandler(
             clientId = clientId,
             supportedCategories = supportedCategories,
-            onMessageReceived = onMessageReceived,
-            lifecycle = lifecycle,
-            onListenerDestroyed = MessageQueueManager::removeHandler
+            onMessageReceived = onMessageReceived
         )
 
         if (mListOfHandlers.containsKey(messageHandler.clientId)) {
@@ -54,7 +50,7 @@ internal object MessageQueueManager {
      *
      * @param handlerId: Message handler to remove
      */
-    private fun removeHandler(handlerId: Long) {
+    fun removeHandler(handlerId: Long) {
         try {
             if (mListOfHandlers.containsKey(handlerId)) {
                 Log.d("MessageQueueManager", "Removing queue handler $handlerId")
@@ -66,7 +62,12 @@ internal object MessageQueueManager {
         }
     }
 
-    private fun buildMessage(messageKey: Long, payload: Any): MessageBundle = MessageBundle(messageKey, payload)
+    fun clearHandlers() {
+        //use to list to make a copy
+        mListOfHandlers.toList().forEach { removeHandler(it.first) }
+    }
+
+    private fun buildMessage(messageKey: Long, category: Long, payload: Any): MessageBundle = MessageBundle(messageKey, category, payload)
 
     /**
      * Send the given data using the message key identifier
@@ -78,9 +79,9 @@ internal object MessageQueueManager {
         senderId: Long,
         messageKey: Long,
         categoryKey: Long = NO_CATEGORY,
-        payload: Any
+        payload: Any,
     ) {
-        val message = buildMessage(messageKey, payload)
+        val message = buildMessage(messageKey, categoryKey, payload)
         if (categoryKey == NO_CATEGORY) {
             sendMessagesWithoutCategory(senderId, message)
         } else {
@@ -127,9 +128,7 @@ internal object MessageQueueManager {
             mListOfHandlers
                 .filter { it.key != clientId }
                 .filter {
-                    it.value.supportedCategories.isEmpty() || it.value.supportedCategories.contains(
-                        categoryId
-                    )
+                    it.value.supportedCategories.isEmpty() || it.value.supportedCategories.contains(categoryId)
                 }
                 .ifEmpty {
                     throw LightMessageBrokerException("Client Id: $clientId, There isn't any client expecting messages for category $categoryId")

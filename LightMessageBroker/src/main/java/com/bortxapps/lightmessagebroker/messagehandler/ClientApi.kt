@@ -1,6 +1,5 @@
 package com.bortxapps.lightmessagebroker.messagehandler
 
-import androidx.lifecycle.Lifecycle
 import com.bortxapps.lightmessagebroker.manager.MessageQueueManager
 
 
@@ -13,14 +12,12 @@ import com.bortxapps.lightmessagebroker.manager.MessageQueueManager
 fun attachMessageClient(
     clientId: Long,
     supportedCategories: List<Long> = listOf(),
-    lifecycle: Lifecycle,
-    onMessageReceived: (Long, Any) -> Unit
+    onMessageReceived: (msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
 ) {
     MessageQueueManager.attachHandler(
         clientId = clientId,
         supportedCategories = supportedCategories,
-        onMessageReceived = onMessageReceived,
-        lifecycle = lifecycle
+        onMessageReceived = onMessageReceived
     )
 }
 
@@ -31,4 +28,14 @@ fun attachMessageClient(
  */
 suspend fun sendMessage(clientId: Long, messageKey: Long, categoryKey: Long, payload: Any) {
     MessageQueueManager.sendMessageToManager(clientId, messageKey, categoryKey, payload)
+}
+
+
+@Suppress("unused")
+fun removeHandler(clientId: Long) {
+    MessageQueueManager.removeHandler(clientId)
+}
+
+fun clearAllHandlers() {
+    MessageQueueManager.clearHandlers()
 }
