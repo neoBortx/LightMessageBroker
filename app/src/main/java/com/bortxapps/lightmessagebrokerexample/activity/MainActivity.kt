@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -35,7 +36,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalMaterial3Api::class)
 @AndroidEntryPoint
-class MainActivity() : ComponentActivity() {
+class MainActivity : ComponentActivity() {
 
     private val viewModel: ActivityViewModel by viewModels()
 
@@ -59,7 +60,8 @@ class MainActivity() : ComponentActivity() {
                             onNumberMessagesChanged = viewModel::setMessages,
                             onNumberConsumersChanged = viewModel::setConsumers,
                             onStart = viewModel::start,
-                            onMessagesRequested = viewModel::getConsumerMessages
+                            onMessagesRequested = viewModel::getConsumerMessages,
+                            onSendByClientIdChanged = viewModel::onSendByClientIdChanged
                         )
                     }
                 }
@@ -88,7 +90,8 @@ fun ConstraintLayoutContent(
     onNumberMessagesChanged: (String) -> Unit,
     onNumberConsumersChanged: (String) -> Unit,
     onStart: () -> Unit,
-    onMessagesRequested: (Int) -> List<Int>,
+    onMessagesRequested: (Long) -> List<Int>,
+    onSendByClientIdChanged: (Boolean) -> Unit,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -99,7 +102,7 @@ fun ConstraintLayoutContent(
             .background(color = colorResource(id = R.color.white))
 
     ) {
-        val (numberMessagesTextEdit, consumersTextEdit, startButton, resultList, progressBar) = createRefs()
+        val (numberMessagesTextEdit, consumersTextEdit, startButton, resultList, progressBar, checkbox) = createRefs()
         val pattern = remember { Regex("\\d*") }
 
         TextField(
@@ -164,6 +167,20 @@ fun ConstraintLayoutContent(
                 .padding(horizontal = 20.dp),
         )
 
+        Row(verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .constrainAs(checkbox) {
+                    top.linkTo(consumersTextEdit.bottom, margin = 10.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                }) {
+            Text(
+                text = "Not use categories",
+                color = colorResource(id = R.color.purple_500)
+            )
+            Checkbox(checked = state.sendByClientId, onCheckedChange = onSendByClientIdChanged)
+        }
+
         Button(
             onClick = {
                 keyboardController?.hide()
@@ -175,7 +192,7 @@ fun ConstraintLayoutContent(
                 disabledContainerColor = colorResource(id = R.color.purple_200),
             ),
             modifier = Modifier.constrainAs(startButton) {
-                top.linkTo(consumersTextEdit.bottom, margin = 16.dp)
+                top.linkTo(checkbox.bottom, margin = 10.dp)
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
             }
@@ -292,12 +309,14 @@ fun DefaultPreview() {
                         numberMessages = "5000",
                         numberConsumers = "5",
                         elapsedTime = "7565",
-                        result = mapOf(1 to 10, 2 to 50, 3 to 5, 4 to 24, 5 to 36, 6 to 1000, 7 to 5)
+                        result = mapOf(1L to 10, 2L to 50, 3L to 5, 4L to 24, 5L to 36, 6L to 1000, 7L to 5),
+                        false
                     ),
                     onNumberMessagesChanged = {},
                     onNumberConsumersChanged = {},
                     onStart = {},
                     onMessagesRequested = { listOf() },
+                    onSendByClientIdChanged = {}
                 )
             }
         }

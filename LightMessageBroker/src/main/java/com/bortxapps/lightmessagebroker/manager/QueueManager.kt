@@ -29,7 +29,7 @@ internal object MessageQueueManager {
     fun attachHandler(
         clientId: Long,
         supportedCategories: List<Long> = listOf(),
-        onMessageReceived: (msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
+        onMessageReceived: (clientId: Long, msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
     ) {
 
         val messageHandler = MessageHandler(
@@ -38,7 +38,11 @@ internal object MessageQueueManager {
             onMessageReceived = onMessageReceived
         )
 
+        insertMessageHandler(messageHandler)
+        messageHandler.startConsuming()
+    }
 
+    private fun insertMessageHandler(messageHandler: MessageHandler) {
         if (mListOfHandlersById.containsKey(messageHandler.clientId)) {
             throw LightMessageBrokerException(
                 "There is already a message client with with id ${messageHandler.clientId}"
@@ -46,7 +50,7 @@ internal object MessageQueueManager {
         }
         mListOfHandlersById[messageHandler.clientId] = messageHandler
 
-        supportedCategories.forEach {
+        messageHandler.supportedCategories.forEach {
             if (!mListOfHandlersBtCategory.containsKey(it)) {
                 mListOfHandlersBtCategory[it] = mutableListOf()
             }
@@ -55,9 +59,6 @@ internal object MessageQueueManager {
                 mListOfHandlersBtCategory[it]?.add(messageHandler)
             }
         }
-
-
-        messageHandler.startConsuming()
     }
 
     /**
@@ -99,12 +100,12 @@ internal object MessageQueueManager {
     private fun buildMessage(messageKey: Long, category: Long, payload: Any): MessageBundle = MessageBundle(messageKey, category, payload)
 
     /**
-     * Send the given data using the message key identifier
+     * Send the given data to all clients that are subscribe to the given category
      *
      * @remarks If the category key is empty the message will be sent to all mailboxes, this could
      * provoke an overload in the system. Try to set always a category
      */
-    suspend fun sendMessageToManager(
+    suspend fun sendBroadcastMessage(
         senderId: Long,
         messageKey: Long,
         categoryKey: Long = NO_CATEGORY,
@@ -116,6 +117,27 @@ internal object MessageQueueManager {
         } else {
             sendMessagesWithCategory(senderId, message, categoryKey)
         }
+    }
+
+    /**
+     * Send the given data to the specified client
+     *
+     * @remarks If the category key is empty the message will be sent to all mailboxes, this could
+     * provoke an overload in the system. Try to set always a category
+     */
+    suspend fun sendMessageToClient(
+        targetClientId: Long,
+        messageKey: Long,
+        payload: Any,
+    ) {
+        val message = buildMessage(messageKey, NO_CATEGORY, payload)
+
+        sendMessageToOneCLient(targetClientId, message)
+    }
+
+
+    private suspend fun sendMessageToOneCLient(targetClientId: Long, message: MessageBundle) {
+        mListOfHandlersById[targetClientId]?.postMessage(message)
     }
 
     /**

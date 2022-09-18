@@ -6,7 +6,8 @@ data class ActivityState(
     val numberMessages: String,
     val numberConsumers: String,
     val elapsedTime: String,
-    val result: Map<Int, Int>,
+    val result: Map<Long, Int>,
+    val sendByClientId: Boolean,
 ) {
     companion object {
         fun getInitial() = ActivityState(
@@ -15,7 +16,8 @@ data class ActivityState(
             numberMessages = "",
             numberConsumers = "",
             elapsedTime = "",
-            result = mapOf()
+            result = mapOf(),
+            sendByClientId = false
         )
     }
 }

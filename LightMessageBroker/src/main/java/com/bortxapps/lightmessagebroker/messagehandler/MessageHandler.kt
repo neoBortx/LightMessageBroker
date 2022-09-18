@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 internal class MessageHandler(
     val clientId: Long,
     val supportedCategories: List<Long>,
-    private val onMessageReceived: (msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
+    private val onMessageReceived: (clientId: Long, msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
     queueLength: Int = 100,
 ) {
 
@@ -51,7 +51,7 @@ internal class MessageHandler(
     private fun handleMessage(msg: MessageBundle) {
         try {
             if (disposed) return
-            onMessageReceived(msg.messageKey, msg.messageCategory, msg.messageData)
+            onMessageReceived(clientId, msg.messageKey, msg.messageCategory, msg.messageData)
         } catch (ex: Exception) {
             throw LightMessageBrokerException(
                 "Client ID: $clientId, Unable to handle message",

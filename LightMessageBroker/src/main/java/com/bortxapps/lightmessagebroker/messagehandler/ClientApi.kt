@@ -12,7 +12,7 @@ import com.bortxapps.lightmessagebroker.manager.MessageQueueManager
 fun attachMessageClient(
     clientId: Long,
     supportedCategories: List<Long> = listOf(),
-    onMessageReceived: (msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
+    onMessageReceived: (clientId: Long, msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
 ) {
     MessageQueueManager.attachHandler(
         clientId = clientId,
@@ -22,12 +22,17 @@ fun attachMessageClient(
 }
 
 /**
- * Send the given data using the message key identifier
- * and the data
- *
+ * Send the message to all clients subscribed to the system
  */
-suspend fun sendMessage(clientId: Long, messageKey: Long, categoryKey: Long, payload: Any) {
-    MessageQueueManager.sendMessageToManager(clientId, messageKey, categoryKey, payload)
+suspend fun sendBroadcastMessage(senderId: Long, messageKey: Long, categoryKey: Long, payload: Any) {
+    MessageQueueManager.sendBroadcastMessage(senderId, messageKey, categoryKey, payload)
+}
+
+/**
+ * Send the message to all clients subscribed to the system
+ */
+suspend fun sendMessageToClient(targetClientId: Long, messageKey: Long, payload: Any) {
+    MessageQueueManager.sendMessageToClient(targetClientId, messageKey, payload)
 }
 
 

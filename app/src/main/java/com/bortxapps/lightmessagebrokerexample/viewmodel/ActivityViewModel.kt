@@ -17,6 +17,7 @@ import com.bortxapps.lightmessagebroker.messagehandler.clearAllHandlers
 import com.bortxapps.lightmessagebrokerexample.workers.ProducerWorker
 import com.bortxapps.lightmessagebrokerexample.workers.WorkerConstants.NUMBER_CONSUMERS
 import com.bortxapps.lightmessagebrokerexample.workers.WorkerConstants.NUMBER_MESSAGES
+import com.bortxapps.lightmessagebrokerexample.workers.WorkerConstants.SEND_TO_ALL_CLIENTS_ONE_BY_ONE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -27,7 +28,11 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
     private var startTime = 0L
     private var numberMessages: Int = 0
     private var numberConsumer: Int = 0
-    private var counters = mutableMapOf<Int, MessageReceiver>()
+
+    /**
+     * The index can be the message category or clientId depending on the chosen method to send message
+     */
+    private var messageReceivers = mutableMapOf<Long, MessageReceiver>()
     //endregion
 
     //region state
@@ -36,15 +41,28 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
     //endregion
 
     //region private functions
-    private fun processMessage(category: Int, data: Any) {
-        counters[category]?.processMessage(data)
+    private fun processMessage(clientId: Long, category: Long, data: Any) {
 
-        if (counters.toList().sumOf { it.second.counter } >= (numberMessages - 1)) {
+        val index = if (uiState.sendByClientId) {
+            clientId
+        } else {
+            category
+        }
+
+        val limitMessages = if (uiState.sendByClientId) {
+            numberMessages * numberConsumer
+        } else {
+            numberMessages
+        }
+
+        messageReceivers[index]?.processMessage(data)
+
+        if (messageReceivers.toList().sumOf { it.second.counter } > (limitMessages - 1)) {
             val endTime = System.currentTimeMillis()
             uiState = uiState.copy(isRunning = false,
                 showResult = true,
                 elapsedTime = (endTime - startTime).toString(),
-                result = counters.mapValues { it.value.counter })
+                result = messageReceivers.mapValues { it.value.counter })
         }
     }
     //endregion
@@ -61,21 +79,25 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
             attachMessageClient(
                 clientId = it.toLong(),
                 supportedCategories = listOf(it.toLong())
-            ) { _, cat, data ->
-                processMessage(cat.toInt(), data)
+            ) { clientId, _, cat, data ->
+                processMessage(clientId, cat, data)
             }
         }
 
         if (uiState.numberMessages.isNotBlank() && uiState.numberMessages.toInt() > 0) {
             numberMessages = uiState.numberMessages.toInt()
             numberConsumer = uiState.numberConsumers.toInt()
-            counters.clear()
+            messageReceivers.clear()
             repeat(numberConsumer) { consumerIndex ->
-                counters[consumerIndex] = MessageReceiver()
+                messageReceivers[consumerIndex.toLong()] = MessageReceiver()
             }
 
             uiState = uiState.copy(isRunning = true, showResult = false)
-            val data = workDataOf(NUMBER_MESSAGES to numberMessages, NUMBER_CONSUMERS to numberConsumer)
+            val data = workDataOf(
+                NUMBER_MESSAGES to numberMessages,
+                NUMBER_CONSUMERS to numberConsumer,
+                SEND_TO_ALL_CLIENTS_ONE_BY_ONE to uiState.sendByClientId
+            )
 
             val producerWorker: WorkRequest = OneTimeWorkRequestBuilder<ProducerWorker>()
                 .setInputData(data)
@@ -96,8 +118,12 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
         uiState = uiState.copy(numberConsumers = consumers)
     }
 
-    fun getConsumerMessages(consumerId: Int): List<Int> {
-        return counters[consumerId]?.messagesReceived ?: listOf()
+    fun getConsumerMessages(consumerId: Long): List<Int> {
+        return messageReceivers[consumerId]?.messagesReceived ?: listOf()
+    }
+
+    fun onSendByClientIdChanged(value: Boolean) {
+        uiState = uiState.copy(sendByClientId = value)
     }
     //endregion
 
