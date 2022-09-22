@@ -21,6 +21,9 @@ internal object MessageQueueManager {
 
     private val mListOfHandlersBtCategory: MutableMap<Long, MutableList<MessageHandler>> = mutableMapOf()
 
+    internal fun getListOfHandlersById() = mListOfHandlersById.toMap()
+    internal fun getHandlersOfCategory(category: Long) = mListOfHandlersBtCategory[category]?.toList() ?: listOf()
+
     /**
      * Add a new message handler to the mailing system
      *
@@ -32,7 +35,7 @@ internal object MessageQueueManager {
         onMessageReceived: (clientId: Long, msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
     ) {
 
-        val messageHandler = MessageHandler(
+        val messageHandler = generateMessageHandler(
             clientId = clientId,
             supportedCategories = supportedCategories,
             onMessageReceived = onMessageReceived
@@ -42,7 +45,18 @@ internal object MessageQueueManager {
         messageHandler.startConsuming()
     }
 
-    private fun insertMessageHandler(messageHandler: MessageHandler) {
+    internal fun generateMessageHandler(
+        clientId: Long,
+        supportedCategories: List<Long> = listOf(),
+        onMessageReceived: (clientId: Long, msgKey: Long, msgCategory: Long, payload: Any) -> Unit,
+    ) =
+        MessageHandler(
+            clientId = clientId,
+            supportedCategories = supportedCategories,
+            onMessageReceived = onMessageReceived
+        )
+
+    internal fun insertMessageHandler(messageHandler: MessageHandler) {
         if (mListOfHandlersById.containsKey(messageHandler.clientId)) {
             throw LightMessageBrokerException(
                 "There is already a message client with with id ${messageHandler.clientId}"
@@ -132,12 +146,18 @@ internal object MessageQueueManager {
     ) {
         val message = buildMessage(messageKey, NO_CATEGORY, payload)
 
-        sendMessageToOneCLient(targetClientId, message)
+        sendMessageToOneClient(targetClientId, message)
     }
 
 
-    private suspend fun sendMessageToOneCLient(targetClientId: Long, message: MessageBundle) {
-        mListOfHandlersById[targetClientId]?.postMessage(message)
+    internal suspend fun sendMessageToOneClient(targetClientId: Long, message: MessageBundle) {
+        try {
+            mListOfHandlersById[targetClientId]!!.postMessage(message)
+        } catch (ex: LightMessageBrokerException) {
+            throw ex
+        } catch (ex: Exception) {
+            throw LightMessageBrokerException("TargetClientId Id: $targetClientId, unable to send message ", ex)
+        }
     }
 
     /**
@@ -145,16 +165,13 @@ internal object MessageQueueManager {
      * and the data
      *
      * The message is sent to all message handlers attached to our custom message system
-     *
-     * @param message: the message to send
-     * @param clientId: The identifier of the message handler
      */
-    private suspend fun sendMessagesWithoutCategory(clientId: Long, message: MessageBundle) {
+    internal suspend fun sendMessagesWithoutCategory(senderId: Long, message: MessageBundle) {
         try {
             mListOfHandlersById
-                .filter { it.key != clientId }
+                .filter { it.key != senderId }
                 .ifEmpty {
-                    throw LightMessageBrokerException("Client Id: $clientId, There isn't any more clients available in the system")
+                    throw LightMessageBrokerException("Client Id: $senderId, There isn't any more clients available in the system")
                 }
                 .forEach {
                     Log.d("test", "dispatching message")
@@ -163,7 +180,7 @@ internal object MessageQueueManager {
         } catch (ex: LightMessageBrokerException) {
             throw ex
         } catch (ex: Exception) {
-            throw LightMessageBrokerException("Client Id: $clientId, unable to send message ", ex)
+            throw LightMessageBrokerException("Client Id: $senderId, unable to send message ", ex)
         }
     }
 
@@ -174,23 +191,21 @@ internal object MessageQueueManager {
      * The message is sent only to handlers that doesn't have any filter keyword or contains
      * the filter keyword in their list of filters
      */
-    private suspend fun sendMessagesWithCategory(clientId: Long, message: MessageBundle, categoryId: Long) {
+    internal suspend fun sendMessagesWithCategory(senderId: Long, message: MessageBundle, categoryId: Long) {
         try {
-            mListOfHandlersBtCategory[message.messageCategory]
-                ?.filter {
-                    it.clientId != clientId
-                }
-                ?.ifEmpty {
-                    throw LightMessageBrokerException("Client Id: $clientId, There isn't any client expecting messages for category $categoryId")
-                }
-                ?.forEach {
+            mListOfHandlersBtCategory[message.messageCategory]!!
+                .filter {
+                    it.clientId != senderId
+                }.ifEmpty {
+                    throw LightMessageBrokerException("Client Id: $senderId, There isn't any client expecting messages for category $categoryId")
+                }.forEach {
                     it.postMessage(message)
                 }
         } catch (ex: LightMessageBrokerException) {
             throw ex
         } catch (ex: Exception) {
             throw LightMessageBrokerException(
-                "Client Id: $clientId, unable to send message with category",
+                "Client Id: $senderId, unable to send message with category",
                 ex
             )
         }

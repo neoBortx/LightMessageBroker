@@ -4,7 +4,6 @@
 
 package com.bortxapps.lightmessagebroker.messagehandler
 
-import com.bortxapps.lightmessagebroker.exceptions.LightMessageBrokerException
 import com.bortxapps.lightmessagebroker.messages.MessageBundle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,17 +21,18 @@ internal class MessageHandler(
     private var disposed = false
     private val sharedFlow = MutableSharedFlow<MessageBundle>(extraBufferCapacity = queueLength)
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val job = getConsumingJob()
+    private lateinit var job: Job
 
     //region public functions
     fun dispose() {
-        if (!disposed) {
+        if (!disposed && ::job.isInitialized) {
             job.cancel()
             disposed = true
         }
     }
 
     fun startConsuming() {
+        job = getConsumingJob()
         job.start()
     }
 
@@ -49,15 +49,8 @@ internal class MessageHandler(
      * @param msg: The message to handle
      */
     private fun handleMessage(msg: MessageBundle) {
-        try {
-            if (disposed) return
-            onMessageReceived(clientId, msg.messageKey, msg.messageCategory, msg.messageData)
-        } catch (ex: Exception) {
-            throw LightMessageBrokerException(
-                "Client ID: $clientId, Unable to handle message",
-                ex
-            )
-        }
+        if (disposed) return
+        onMessageReceived(clientId, msg.messageKey, msg.messageCategory, msg.messageData)
     }
     //endregion
 
