@@ -20,8 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +43,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: ActivityViewModel by viewModels()
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -48,6 +52,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             LightMessageBrokerExampleTheme {
                 Scaffold(
+                    modifier = Modifier.semantics {
+                        testTagsAsResourceId = true
+                    },
                     topBar = { TopAppBarCustom() }) { contentPadding ->
                     Box(
                         modifier = Modifier
@@ -133,7 +140,8 @@ fun ConstraintLayoutContent(
                     end.linkTo(parent.end)
                 }
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 20.dp)
+                .testTag("tfNumberMessages"),
         )
 
         TextField(
@@ -164,7 +172,8 @@ fun ConstraintLayoutContent(
                     end.linkTo(parent.end)
                 }
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 20.dp)
+                .testTag("tfNumberConsumers"),
         )
 
         Row(verticalAlignment = Alignment.CenterVertically,
@@ -178,7 +187,11 @@ fun ConstraintLayoutContent(
                 text = "Not use categories",
                 color = colorResource(id = R.color.purple_500)
             )
-            Checkbox(checked = state.sendByClientId, onCheckedChange = onSendByClientIdChanged)
+            Checkbox(
+                checked = state.sendByClientId,
+                onCheckedChange = onSendByClientIdChanged,
+                modifier = Modifier.testTag("cbSendOneByOne")
+            )
         }
 
         Button(
@@ -191,11 +204,13 @@ fun ConstraintLayoutContent(
                 containerColor = colorResource(id = R.color.purple_500),
                 disabledContainerColor = colorResource(id = R.color.purple_200),
             ),
-            modifier = Modifier.constrainAs(startButton) {
-                top.linkTo(checkbox.bottom, margin = 10.dp)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }
+            modifier = Modifier
+                .constrainAs(startButton) {
+                    top.linkTo(checkbox.bottom, margin = 10.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                }
+                .testTag("btnStart")
         ) {
             Text(
                 color = colorResource(id = R.color.white),
@@ -233,7 +248,9 @@ fun ConstraintLayoutContent(
                     .fillMaxHeight()
             ) {
                 Text(
-                    modifier = Modifier.padding(bottom = 10.dp),
+                    modifier = Modifier
+                        .padding(bottom = 10.dp)
+                        .testTag("TextResult"),
                     color = colorResource(id = R.color.purple_500),
                     text = stringResource(R.string.all_messages_label) + " " + state.elapsedTime + " " + stringResource(R.string.milliseconds)
                 )
@@ -241,6 +258,7 @@ fun ConstraintLayoutContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
+                        .testTag("lcConsumersList")
                 ) {
                     items(state.result.toList()) {
                         var showMessages by remember { mutableStateOf(false) }
@@ -253,10 +271,12 @@ fun ConstraintLayoutContent(
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Text(
+                                    modifier = Modifier.testTag("textClientId"),
                                     text = "Client: ${it.first}",
                                     color = colorResource(id = R.color.purple_500)
                                 )
                                 Text(
+                                    modifier = Modifier.testTag("textEvents"),
                                     text = "Process ${it.second} events",
                                     color = colorResource(id = R.color.purple_500)
                                 )
