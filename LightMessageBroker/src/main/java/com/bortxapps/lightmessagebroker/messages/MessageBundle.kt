@@ -13,6 +13,11 @@ data class MessageBundle(
     val messageKey: Long,
 
     /**
+     * The category that surrounds that message, because it can be a second level of filtering
+     */
+    val messageCategory: Long,
+
+    /**
      * The data to send in the message
      * It can be anything. You can send complex object or primitive types
      */
