@@ -51,7 +51,7 @@ class ClientApiTest {
 
         every { MessageQueueManager.removeHandler(any()) } returns Unit
 
-        removeHandler(1L)
+        removeHandler(clientId = 1L)
 
         verify { MessageQueueManager.removeHandler(1L) }
     }

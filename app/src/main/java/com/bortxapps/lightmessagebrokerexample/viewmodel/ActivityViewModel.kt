@@ -49,7 +49,8 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
     //endregion
 
     //region private functions
-    private fun processMessage(clientId: Long, category: Long, data: Any) {
+    @Suppress("UNUSED_PARAMETER")
+    private fun processMessage(clientId: Long, key: Long, category: Long, data: Any) {
 
         val index = if (uiState.sendByClientId) {
             clientId
@@ -84,11 +85,12 @@ class ActivityViewModel @Inject constructor(application: Application) : AndroidV
     fun start() {
         clearAllHandlers()
         repeat(uiState.numberConsumers.toInt()) {
+
             attachMessageClient(
                 clientId = it.toLong(),
                 supportedCategories = listOf(it.toLong())
-            ) { clientId, _, cat, data ->
-                processMessage(clientId, cat, data)
+            ) { clientId, messageKey, messageCategory, messagePayload ->
+                processMessage(clientId, messageKey, messageCategory, messagePayload)
             }
         }
 

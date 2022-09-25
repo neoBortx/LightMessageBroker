@@ -8,6 +8,7 @@
 
 package com.bortxapps.lightmessagebroker.messagehandler
 
+import com.bortxapps.lightmessagebroker.constants.Constants
 import com.bortxapps.lightmessagebroker.manager.MessageQueueManager
 
 
@@ -32,7 +33,7 @@ fun attachMessageClient(
 /**
  * Send the message to all clients subscribed to the system
  */
-suspend fun sendBroadcastMessage(senderId: Long, messageKey: Long, categoryKey: Long, payload: Any) {
+suspend fun sendBroadcastMessage(senderId: Long, messageKey: Long, categoryKey: Long = Constants.NO_CATEGORY, payload: Any) {
     MessageQueueManager.sendBroadcastMessage(senderId, messageKey, categoryKey, payload)
 }
 
