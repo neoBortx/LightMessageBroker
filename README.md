@@ -18,13 +18,13 @@ Think the library as a list of mailboxes, each atached client has his own mail b
 
 The messaging system keeps referenced the client mailboxes in two different maps, one indexes by the client id and another indexed by category in order to speed up the search operations depending on the method to send the message:
 
-#### Send a message to one client by its ID
+### Send a message to one client by its ID
 
 ![mail boxes 002](https://user-images.githubusercontent.com/52082881/192159832-95a88d81-47cd-43dc-90e5-96f992d0c9a6.jpeg)
 
 The messaging system search into the map referenced by the mail box of the target client by its id.
 
-#### Send a broadcast message to several clients using categories
+### Send a broadcast message to several clients using categories
 
 ![mail boxes 003](https://user-images.githubusercontent.com/52082881/192160017-99212a67-3aa4-4844-b773-dbb113a24bbc.jpeg)
 
@@ -32,7 +32,7 @@ The categories act like filters. When a client attaches to the messaging system 
 
 The message system will search in the map indexed by category the category of the message. This row of the table will contains the list of all mailboxes that have to receive the message.
 
-#### Send a broadcast message to all clients
+### Send a broadcast message to all clients
 
 ![mail boxes 004](https://user-images.githubusercontent.com/52082881/192160057-6ac61b12-809b-4ca8-8cf2-045f8d87664e.jpeg)
 
