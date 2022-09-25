@@ -95,8 +95,9 @@ There are three different ways of sending messages.
 
 ### Send broadcast messages
 
-```kotlin sendBroadcastMessage(   senderId = clientID,   messageKey = messageKey,
- payload = messageData
+```kotlin 
+sendBroadcastMessage(   senderId = clientID,   messageKey = messageKey,
+  payload = messageData
 )
 ```
 
@@ -104,7 +105,8 @@ Using that method, the message is not categorised, so it is send to **all client
 
 #### Send Multicast messages
 
-```kotlin sendBroadcastMessage(   senderId = clientID,   messageKey = messageKey,
+```kotlin 
+sendBroadcastMessage(   senderId = clientID,   messageKey = messageKey,
  categoryKey = Random.nextLong(numberCostumers.toLong()),
  payload = messageData
 )
@@ -113,7 +115,8 @@ This is similar than the previous method unlike the message is categorised. That
 
 #### Send unicast messages
 
-```kotlin sendMessageToClient(   targetClientId = clientID.toLong(),    messageKey = messageKey,
+```kotlin 
+sendMessageToClient(   targetClientId = clientID.toLong(),    messageKey = messageKey,
   payload = messageData
 )
 ```
@@ -123,7 +126,8 @@ This method just send messages to the specified client, it is fastest way to sen
 
 If the client doesn't want to process more messages or is going to be disposed (due it is an Android Architetcural element or whatever) it has to be removed from the queue system in orde to free resources:
 
-```kotlin removeHandler(clientId = 1L)
+```kotlin 
+removeHandler(clientId = 1L)
 ```
 ### Clear the messaging system
 
