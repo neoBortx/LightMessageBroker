@@ -1,3 +1,11 @@
+/*
+ * Copyright 2022 Borja Villarroya Rodriguez
+ *
+ * Use of this source code is governed by an MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT.
+ */
+
 package com.bortxapps.lightmessagebroker.messages
 
 /**
@@ -11,6 +19,11 @@ data class MessageBundle(
      * The identifier of the message, it can be used to identify the content of the message
      */
     val messageKey: Long,
+
+    /**
+     * The category that surrounds that message, because it can be a second level of filtering
+     */
+    val messageCategory: Long,
 
     /**
      * The data to send in the message
