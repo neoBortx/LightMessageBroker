@@ -1,9 +1,17 @@
 # LightMessageBroker
-This is an example of how to build a tiny simple and very fast message broker to communicate many services in your Android application avoiding code and login coupling between them.
+This is an example of how to build a tiny simple and very fast message broker to communicate many services in your Android application.
 
 The project is splitted in two parts, a module that acts as a library that handles the logic of the mailboxes (create, delete, send and read them) and a small application that uses that module.
 
-The application made using jetpack compose, coruotines and workers, is quite simple and is made just to show some of the possibilities of the applications, I encourage you to see how the application uses the library before importing it into your project.
+The application is made using jetpack compose, coruotines and workers, is quite simple and is made just to show some of the possibilities of the library, I encourage you to see how the application uses the library before importing it into your project.
+
+The example is very simple. It creates as many messages handlers as you confiugre in the interface and  creates a worker to send messages in a parallel thread. Each client is going to have defined a category (I will explain later their use) and the sender will send a broadcast message to one category each time randomly. when all messages have been processed, the application will show the result. 
+
+If you select the check to not use categories, each messages will be sent to every message handler one by one.
+
+
+https://user-images.githubusercontent.com/52082881/192163479-55edd418-6d66-46c8-ac5a-c6fd31b308b7.mov
+
 
 ## Why you should use a message broker in your APP?
 
@@ -37,6 +45,18 @@ The message system will search in the map indexed by category the category of th
 ![mail boxes 004](https://user-images.githubusercontent.com/52082881/192160057-6ac61b12-809b-4ca8-8cf2-045f8d87664e.jpeg)
 
 If a broadcast without category is sent, it will be sent to all clients. In that case the system just has to iterate the clientId indexed map.
+
+### Architecture
+
+Quite simple and straightforward: 
+- The message system manager is instantiated in static memory. 
+- Each client have to pass a callback function to the message system.
+- The message system manager holds two maps indexed by clientID and categoryID.
+- For each client, it creates a MessageHandler. The reference of each handler is stored in both maps.
+- Each message handler holds a reference to the callback function of the client
+- Each message handler holds its own shared flow
+- The message system manager post messages by emiting the message in the flow of the target clients
+- The message handler of the target clients collects the message and invokes the callback function
 
 ### Coroutines flows
 
