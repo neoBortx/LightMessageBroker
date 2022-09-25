@@ -133,7 +133,9 @@ removeHandler(clientId = 1L)
 
 It is quite simple, if you want to free al resources handled by the messaging system and remove all clients, just call:
 
-```kotlin clearAllHandlers() ```
+```kotlin 
+clearAllHandlers()
+```
 ### Precautions
 
 - If you attach an Android architectural element you need to control the lifecycle of the element and remove it from the queue system to avoid memory leaks.
