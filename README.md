@@ -5,6 +5,10 @@ The project is splitted in two parts, a module that acts as a library that handl
 
 The application made using jetpack compose, coruotines and workers, is quite simple and is made just to show some of the possibilities of the applications, I encourage you to see how the application uses the library before importing it into your project.
 
+## Why you should use a message broker in your APP?
+
+Well it depends on the architecture and functionality of your application. If your are developong an application (Anroid or backend) that just perform CRUD operations, you probably won't need to add this complexity to your architecture. But if you're developing an application with several services or workers in background, that have to be syncronized or they requiere to talk between them (like microservices); and obviusly you don't want to couple them neither programatically neither logically, you need to add messaging system. In that scenareo a messaging broker kills it. 
+
 
 ## How the library works
 
