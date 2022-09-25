@@ -98,7 +98,9 @@ There are three different ways of sending messages.
 ```kotlin sendBroadcastMessage(   senderId = clientID,   messageKey = messageKey,
  payload = messageData
 )
-```` Using that method, the message is not categorised, so it is send to **all clients attached to the messaging system** (except the client that sends that message).
+```
+
+Using that method, the message is not categorised, so it is send to **all clients attached to the messaging system** (except the client that sends that message).
 
 #### Send Multicast messages
 
