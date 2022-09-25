@@ -6,7 +6,11 @@ The project is splitted in two parts, a module that acts as a library that handl
 The application made using jetpack compose, coruotines and workers, is quite simple and is made just to show some of the possibilities of the applications, I encourage you to see how the application uses the library before importing it into your project. 
 
 
-## How is made the library
+## How the library works
+
+Think the library as a list of mailboxes, each atached client has his own mail box with an unique identifier that allows him to read messages that has been sent to him. Also think that each mail box is subscribed to receive some newsletters about a specific topic (category), so it is bassiaclly what this library does:
+
+![mail boxes 001](https://user-images.githubusercontent.com/52082881/192149631-8979180c-0a73-4b9a-bf4e-d9a4ec10599b.jpeg)
 
 
 
