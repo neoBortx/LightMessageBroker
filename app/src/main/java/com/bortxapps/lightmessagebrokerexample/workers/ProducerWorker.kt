@@ -38,10 +38,19 @@ class ProducerWorker(appContext: Context, workerParams: WorkerParameters) :
         repeat(numberOfMessages) { messageData ->
             if (sendToAllClientsOneByOne) {
                 repeat(numberCostumers) { clientID ->
-                    sendMessageToClient(clientID.toLong(), messageKey, messageData)
+                    sendMessageToClient(
+                        targetClientId = clientID.toLong(),
+                        messageKey = messageKey,
+                        payload = messageData
+                    )
                 }
             } else {
-                sendBroadcastMessage(clientID, messageKey, Random.nextLong(numberCostumers.toLong()), messageData)
+                sendBroadcastMessage(
+                    senderId = clientID,
+                    messageKey = messageKey,
+                    categoryKey = Random.nextLong(numberCostumers.toLong()),
+                    payload = messageData
+                )
             }
         }
         return Result.success()
