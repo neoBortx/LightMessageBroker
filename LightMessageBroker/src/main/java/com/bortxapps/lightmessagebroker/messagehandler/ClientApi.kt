@@ -44,8 +44,6 @@ suspend fun sendMessageToClient(targetClientId: Long, messageKey: Long, payload:
     MessageQueueManager.sendMessageToClient(targetClientId, messageKey, payload)
 }
 
-
-@Suppress("unused")
 fun removeHandler(clientId: Long) {
     MessageQueueManager.removeHandler(clientId)
 }

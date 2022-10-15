@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.lang.Thread.sleep
 
 class MessageHandlerUnitTest {
 
@@ -99,19 +100,20 @@ class MessageHandlerUnitTest {
             receivedPayload = payload
         }))
 
-        handler.startConsuming()
 
         runBlocking {
+            handler.startConsuming()
             handler.postMessage(MessageBundle(expectedMessageKey, expectedMessageCategory, expectedData))
 
+            //This isn't a blocking operation and is being made in another thread so we have ti put an sleep here
             withContext(Dispatchers.IO) {
-                Thread.sleep(1000)
+                sleep(4000)
             }
-
-            assertEquals(receivedClientId, expectedClientId)
-            assertEquals(receivedMsgKey, expectedMessageKey)
-            assertEquals(receivedMsgCategory, expectedMessageCategory)
-            assertEquals(receivedPayload, expectedData)
         }
+
+        assertEquals(receivedClientId, expectedClientId)
+        assertEquals(receivedMsgKey, expectedMessageKey)
+        assertEquals(receivedMsgCategory, expectedMessageCategory)
+        assertEquals(receivedPayload as Int, expectedData)
     }
 }
