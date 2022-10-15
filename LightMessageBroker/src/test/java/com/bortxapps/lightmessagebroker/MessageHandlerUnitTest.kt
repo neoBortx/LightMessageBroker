@@ -22,7 +22,6 @@ import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.lang.Thread.sleep
 
 class MessageHandlerUnitTest {
 
@@ -92,6 +91,7 @@ class MessageHandlerUnitTest {
         var receivedMsgKey = 0L
         var receivedMsgCategory = 0L
         var receivedPayload: Any = 0L
+        var count = 0
 
         val handler = spyk(MessageHandler(expectedClientId, listOf(5, 6, 7), onMessageReceived = { cId, keyId, cat, payload ->
             receivedClientId = cId
@@ -100,14 +100,16 @@ class MessageHandlerUnitTest {
             receivedPayload = payload
         }))
 
+        handler.startConsuming()
 
         runBlocking {
-            handler.startConsuming()
             handler.postMessage(MessageBundle(expectedMessageKey, expectedMessageCategory, expectedData))
-
             //This isn't a blocking operation and is being made in another thread so we have ti put an sleep here
-            withContext(Dispatchers.IO) {
-                sleep(4000)
+            while (receivedClientId == 0L && count < 20) {
+                withContext(Dispatchers.IO) {
+                    Thread.sleep(1000)
+                    count++
+                }
             }
         }
 
