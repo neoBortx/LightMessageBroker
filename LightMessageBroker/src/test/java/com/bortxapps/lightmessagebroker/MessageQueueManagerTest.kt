@@ -99,6 +99,7 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
         repeat(5) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(5)) { clientId, msgKey, msgCategory, payload ->
@@ -120,6 +121,11 @@ class MessageQueueManagerTest {
             }
         }
 
+        while (receivers.count() < 5 && times < 50) {
+            Thread.sleep(1000)
+            times++
+        }
+
         assertEquals(5, receivers.count())
         assertEquals(5L, receivedMessageCategory)
         assertEquals("payload", receivedPayload)
@@ -133,6 +139,7 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
         repeat(30) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(it.toLong())) { clientId, msgKey, msgCategory, payload ->
@@ -151,6 +158,11 @@ class MessageQueueManagerTest {
                 payload = "payload"
             )
             coVerify { MessageQueueManager.sendMessagesWithoutCategory(9655L, any()) }
+        }
+
+        while (receivers.count() < 30 && times < 50) {
+            Thread.sleep(1000)
+            times++
         }
 
         assertEquals(30, receivers.count())
@@ -225,6 +237,7 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
         MessageQueueManager.attachHandler(1L, listOf(5)) { clientId, msgKey, msgCategory, payload ->
             receivers.add(clientId)
@@ -238,6 +251,12 @@ class MessageQueueManagerTest {
             coVerify { MessageQueueManager.sendMessageToOneClient(1L, any()) }
         }
 
+        while (receivers.isEmpty() && times < 10) {
+            Thread.sleep(1000)
+            times++
+        }
+
+
         assertEquals(1, receivers.count())
         assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
         assertEquals("payload", receivedPayload)
@@ -249,6 +268,7 @@ class MessageQueueManagerTest {
     fun `Several handlers with same category and send message to one of them category expect message send to just one of them`() {
 
         val receivers = mutableListOf<Long>()
+        var times = 0
 
         repeat(10) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(5)) { clientId, _, _, _ ->
@@ -260,6 +280,12 @@ class MessageQueueManagerTest {
             MessageQueueManager.sendMessageToClient(7L, 565L, "payload")
             coVerify { MessageQueueManager.sendMessageToOneClient(7L, any()) }
         }
+
+        while (receivers.isEmpty() && times < 10) {
+            Thread.sleep(1000)
+            times++
+        }
+
 
         assertEquals(1, receivers.count())
         assertEquals(7L, receivers[0])
