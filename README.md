@@ -93,14 +93,13 @@ Well, the use of this library is quite straight forward, no interfaces neither i
 
 ```kotlin
 import com.bortxapps.lightmessagebroker.messagehandler.attachMessageClient
-.
-.
-.
+
+
 attachMessageClient(
- clientId = uuid,
- supportedCategories = listOf(supportedCategory)
+    clientId = uuid,
+    supportedCategories = listOf(supportedCategory)
 ) { clientId, messageKey, messageCategory, messagePayload ->
- processMessage(clientId, messageKey, messageCategory, messagePayload)
+    processMessage(clientId, messageKey, messageCategory, messagePayload)
 }
 ```
 When the client receives a message in its mail box, the callback function passed here will be triggered with the following parameters that helps you to process the data:

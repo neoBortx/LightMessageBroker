@@ -13,7 +13,14 @@ import com.bortxapps.lightmessagebroker.constants.Constants
 import com.bortxapps.lightmessagebroker.exceptions.LightMessageBrokerException
 import com.bortxapps.lightmessagebroker.manager.MessageQueueManager
 import com.bortxapps.lightmessagebroker.messagehandler.MessageHandler
-import io.mockk.*
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -22,7 +29,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.lang.Thread.sleep
 
 class MessageQueueManagerTest {
 
@@ -93,6 +99,7 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
         repeat(5) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(5)) { clientId, msgKey, msgCategory, payload ->
@@ -102,7 +109,7 @@ class MessageQueueManagerTest {
                 receivedPayload = payload as String
             }
         }
-        for (i in 6..30) {
+        for (i in 5..9) {
             MessageQueueManager.attachHandler(i.toLong(), listOf(6), ::onMessageReceived)
         }
 
@@ -110,17 +117,19 @@ class MessageQueueManagerTest {
             MessageQueueManager.sendBroadcastMessage(9655L, 556L, 5L, "payload")
 
             withContext(Dispatchers.IO) {
-                sleep(3000)
-
                 coVerify { MessageQueueManager.sendMessagesWithCategory(9655L, any(), 5L) }
-
-
-                assertEquals(5, receivers.count())
-                assertEquals(5L, receivedMessageCategory)
-                assertEquals("payload", receivedPayload)
-                assertEquals(556L, receivedKeyValue)
             }
         }
+
+        while (receivers.count() < 5 && times < 50) {
+            Thread.sleep(1000)
+            times++
+        }
+
+        assertEquals(5, receivers.count())
+        assertEquals(5L, receivedMessageCategory)
+        assertEquals("payload", receivedPayload)
+        assertEquals(556L, receivedKeyValue)
     }
 
     @Test
@@ -130,8 +139,9 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
-        repeat(30) {
+        repeat(10) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(it.toLong())) { clientId, msgKey, msgCategory, payload ->
                 receivers.add(clientId)
                 receivedKeyValue = msgKey
@@ -147,19 +157,18 @@ class MessageQueueManagerTest {
                 categoryKey = Constants.NO_CATEGORY,
                 payload = "payload"
             )
-
-            withContext(Dispatchers.IO) {
-                sleep(3000)
-            }
-
             coVerify { MessageQueueManager.sendMessagesWithoutCategory(9655L, any()) }
-
-
-            assertEquals(30, receivers.count())
-            assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
-            assertEquals("payload", receivedPayload)
-            assertEquals(42L, receivedKeyValue)
         }
+
+        while (receivers.count() < 10 && times < 50) {
+            Thread.sleep(1000)
+            times++
+        }
+
+        assertEquals(10, receivers.count())
+        assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
+        assertEquals("payload", receivedPayload)
+        assertEquals(42L, receivedKeyValue)
     }
 
     @Test
@@ -228,6 +237,7 @@ class MessageQueueManagerTest {
         var receivedKeyValue = 0L
         var receivedMessageCategory = 0L
         var receivedPayload = ""
+        var times = 0
 
         MessageQueueManager.attachHandler(1L, listOf(5)) { clientId, msgKey, msgCategory, payload ->
             receivers.add(clientId)
@@ -238,25 +248,27 @@ class MessageQueueManagerTest {
 
         runBlocking {
             MessageQueueManager.sendMessageToClient(1L, 565L, "payload")
-
-            withContext(Dispatchers.IO) {
-                sleep(3000)
-            }
-
             coVerify { MessageQueueManager.sendMessageToOneClient(1L, any()) }
-
-
-            assertEquals(1, receivers.count())
-            assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
-            assertEquals("payload", receivedPayload)
-            assertEquals(565L, receivedKeyValue)
         }
+
+        while (receivers.isEmpty() && times < 10) {
+            Thread.sleep(1000)
+            times++
+        }
+
+
+        assertEquals(1, receivers.count())
+        assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
+        assertEquals("payload", receivedPayload)
+        assertEquals(565L, receivedKeyValue)
+
     }
 
     @Test
     fun `Several handlers with same category and send message to one of them category expect message send to just one of them`() {
 
         val receivers = mutableListOf<Long>()
+        var times = 0
 
         repeat(10) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(5)) { clientId, _, _, _ ->
@@ -266,17 +278,17 @@ class MessageQueueManagerTest {
 
         runBlocking {
             MessageQueueManager.sendMessageToClient(7L, 565L, "payload")
-
-            withContext(Dispatchers.IO) {
-                sleep(3000)
-            }
-
             coVerify { MessageQueueManager.sendMessageToOneClient(7L, any()) }
-
-
-            assertEquals(1, receivers.count())
-            assertEquals(7L, receivers[0])
         }
+
+        while (receivers.isEmpty() && times < 10) {
+            Thread.sleep(1000)
+            times++
+        }
+
+
+        assertEquals(1, receivers.count())
+        assertEquals(7L, receivers[0])
     }
 
     @Test
@@ -296,16 +308,10 @@ class MessageQueueManagerTest {
             repeat(30) {
                 MessageQueueManager.sendMessageToClient(it.toLong(), 565L, "payload")
             }
-
-            withContext(Dispatchers.IO) {
-                sleep(3000)
-            }
-
             coVerify { MessageQueueManager.sendMessageToOneClient(7L, any()) }
-
-
-            assertEquals(expectedResult, receivers)
         }
+
+        assertEquals(expectedResult.count(), receivers.count())
     }
 
     @Test

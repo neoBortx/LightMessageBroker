@@ -86,11 +86,11 @@ class MessageHandlerUnitTest {
         val expectedMessageCategory = 53L
         val expectedData = 56
 
-
         var receivedClientId = 0L
         var receivedMsgKey = 0L
         var receivedMsgCategory = 0L
         var receivedPayload: Any = 0L
+        var count = 0
 
         val handler = spyk(MessageHandler(expectedClientId, listOf(5, 6, 7), onMessageReceived = { cId, keyId, cat, payload ->
             receivedClientId = cId
@@ -103,15 +103,18 @@ class MessageHandlerUnitTest {
 
         runBlocking {
             handler.postMessage(MessageBundle(expectedMessageKey, expectedMessageCategory, expectedData))
-
-            withContext(Dispatchers.IO) {
-                Thread.sleep(1000)
+            //This isn't a blocking operation and is being made in another thread so we have ti put an sleep here
+            while (receivedClientId == 0L && count < 20) {
+                withContext(Dispatchers.IO) {
+                    Thread.sleep(1000)
+                    count++
+                }
             }
-
-            assertEquals(receivedClientId, expectedClientId)
-            assertEquals(receivedMsgKey, expectedMessageKey)
-            assertEquals(receivedMsgCategory, expectedMessageCategory)
-            assertEquals(receivedPayload, expectedData)
         }
+
+        assertEquals(receivedClientId, expectedClientId)
+        assertEquals(receivedMsgKey, expectedMessageKey)
+        assertEquals(receivedMsgCategory, expectedMessageCategory)
+        assertEquals(receivedPayload as Int, expectedData)
     }
 }
