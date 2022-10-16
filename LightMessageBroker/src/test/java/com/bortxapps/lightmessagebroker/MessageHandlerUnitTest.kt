@@ -10,11 +10,16 @@ package com.bortxapps.lightmessagebroker
 
 import androidx.lifecycle.Lifecycle
 import com.bortxapps.lightmessagebroker.messagehandler.MessageHandler
+import com.bortxapps.lightmessagebroker.messages.MessageBundle
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -72,7 +77,7 @@ class MessageHandlerUnitTest {
             job.start()
         }
     }
-/*
+
     @Test
     fun `postMessage expect message emitted in flow`() {
 
@@ -80,7 +85,6 @@ class MessageHandlerUnitTest {
         val expectedMessageKey = 37L
         val expectedMessageCategory = 53L
         val expectedData = 56
-
 
         var receivedClientId = 0L
         var receivedMsgKey = 0L
@@ -112,5 +116,5 @@ class MessageHandlerUnitTest {
         assertEquals(receivedMsgKey, expectedMessageKey)
         assertEquals(receivedMsgCategory, expectedMessageCategory)
         assertEquals(receivedPayload as Int, expectedData)
-    }*/
+    }
 }

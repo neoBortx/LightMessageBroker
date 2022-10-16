@@ -109,7 +109,7 @@ class MessageQueueManagerTest {
                 receivedPayload = payload as String
             }
         }
-        for (i in 6..30) {
+        for (i in 5..9) {
             MessageQueueManager.attachHandler(i.toLong(), listOf(6), ::onMessageReceived)
         }
 
@@ -141,7 +141,7 @@ class MessageQueueManagerTest {
         var receivedPayload = ""
         var times = 0
 
-        repeat(30) {
+        repeat(10) {
             MessageQueueManager.attachHandler(it.toLong(), listOf(it.toLong())) { clientId, msgKey, msgCategory, payload ->
                 receivers.add(clientId)
                 receivedKeyValue = msgKey
@@ -160,12 +160,12 @@ class MessageQueueManagerTest {
             coVerify { MessageQueueManager.sendMessagesWithoutCategory(9655L, any()) }
         }
 
-        while (receivers.count() < 30 && times < 50) {
+        while (receivers.count() < 10 && times < 50) {
             Thread.sleep(1000)
             times++
         }
 
-        assertEquals(30, receivers.count())
+        assertEquals(10, receivers.count())
         assertEquals(Constants.NO_CATEGORY, receivedMessageCategory)
         assertEquals("payload", receivedPayload)
         assertEquals(42L, receivedKeyValue)

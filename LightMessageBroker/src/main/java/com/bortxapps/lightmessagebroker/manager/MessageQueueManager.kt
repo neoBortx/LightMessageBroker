@@ -182,7 +182,6 @@ internal object MessageQueueManager {
                     throw LightMessageBrokerException("Client Id: $senderId, There isn't any more clients available in the system")
                 }
                 .forEach {
-                    Log.d("test", "dispatching message")
                     it.value.postMessage(message)
                 }
         } catch (ex: LightMessageBrokerException) {
